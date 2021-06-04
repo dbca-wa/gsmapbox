@@ -6,7 +6,9 @@
 	<title>GeoServer Mapbox Rest Client</title>
 	<meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no">
 	<link href="https://api.mapbox.com/mapbox-gl-js/v2.3.0/mapbox-gl.css" rel="stylesheet">
+	<link rel="stylesheet" href="https://unpkg.com/sakura.css/css/sakura.css" type="text/css">
 	<script src="https://api.mapbox.com/mapbox-gl-js/v2.3.0/mapbox-gl.js"></script>
+	<script src="https://unpkg.com/vue@3.0.11/dist/vue.global.js"></script>
 	<style>
 		body {
 			margin: 0;
@@ -26,11 +28,35 @@
 			width: 100%;
 			height: 80vh;
 		}
+
+		[v-cloak] {
+			display: none;
+		}
 	</style>
 </head>
 
 <body>
-	<div id="controls"></div>
+	<div v-cloak id="controls">
+		<h4>Geoserver WFS query utility</h4>
+		<b>Choose a layer: </b>
+		<select v-model="workspace">
+			<option v-for="ws in workspaces" v-bind:value="ws">{{ ws }}</option>
+		</select>
+		<select v-model="layer">
+			<option v-for="layer in layers" v-bind:value="layer[0]">{{ layer[1] }}</option>
+		</select>
+		<button v-on:click="updatemap">Preview</button> <small>Sample Features (max 1000): {{ features.length }}
+			<br><a href="https://docs.geoserver.org/latest/en/user/tutorials/cql/cql_tutorial.html" target="_blank">
+				ECQL (Extended Common Query Language - tutorial)</a><textarea v-model="cql"></textarea>
+			<span v-if="features.length> 0"><p>Download all:
+				<a v-bind:href="url('json')" download>GeoJSON</a>,
+				<a v-bind:href="url('csv')" download>CSV</a>,
+				<a v-bind:href="url('geopackage')" download>GeoPackage</a>, 
+				<a v-bind:href="url('KML')" download>KML</a>
+				<br>1st Feature Properties: {{ features[0]["properties"] }}</span>
+			</p>
+		</small>
+	</div>
 	<div id="map"></div>
 	<script src="app.js"></script>
 </body>
