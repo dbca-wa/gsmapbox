@@ -8,6 +8,8 @@
 	<link href="https://api.mapbox.com/mapbox-gl-js/v2.3.0/mapbox-gl.css" rel="stylesheet">
 	<link rel="stylesheet" href="https://unpkg.com/sakura.css/css/sakura.css" type="text/css">
 	<script src="https://api.mapbox.com/mapbox-gl-js/v2.3.0/mapbox-gl.js"></script>
+	<script src="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-geocoder/v4.7.0/mapbox-gl-geocoder.min.js"></script>
+	<link rel="stylesheet" href="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-geocoder/v4.7.0/mapbox-gl-geocoder.css" type="text/css">
 	<script src="https://unpkg.com/vue@3.0.11/dist/vue.global.js"></script>
 	<script src="https://unpkg.com/turf@3.0.14/turf.js"></script>
 	<style>
@@ -24,10 +26,10 @@
 <body>
 	<div v-cloak id="controls">
 		<div>
-			<strong>Geoserver WFS query utility - Workspace <select v-model="workspace" v-on:change="reset">
-					<option v-for="ws in workspaces" v-bind:value="ws">{{ ws }}</option>
-				</select></strong><br>
-			Layer: <input list="layers" v-model="layer" type="text" placeholder="Pick a layer..." />
+			<strong>Geoserver WFS query utility</strong> | <input list="layers" v-model="layer" type="text" placeholder="Find a layer..." /><br>
+			<div style="max-height: 20em; overflow: auto;">
+				<small v-for="lyr in layers"><button v-on:click="set(lyr)">{{ lyr[1] }} ({{lyr[0]}})</button><br></small>
+			</div>
 			<small v-if="json['features']"> Download:
 				<a v-bind:href="url('json')" download>GeoJSON</a>,
 				<a v-bind:href="url('csv')" download>CSV</a>,
@@ -36,11 +38,8 @@
 				<a v-bind:href="url('SHAPE-ZIP')" download>Shapefile (zip)</a>
 			</small><br>
 			<button v-on:click="updatemap">Load</button> |
-			<button v-on:click="reset">Clear</button> | 
+			<button v-on:click="reset">Clear</button> |
 			<button v-on:click="setcqlbounds">Limit to map extent</button>
-			<datalist id="layers">
-				<option v-for="layer in layers" v-bind:value="layer[0]">{{ layer[1] }}</option>
-			</datalist>
 		</div>
 		<div v-if="!json['features'] && xmlerror().length > 0">
 			<small>

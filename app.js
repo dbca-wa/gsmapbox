@@ -6,6 +6,9 @@ window.map = new mapboxgl.Map({
     center: [120, -25], // starting position [lng, lat]
     zoom: 4 // starting zoom
 });
+map.addControl(new MapboxGeocoder({ accessToken: mapboxgl.accessToken, mapboxgl: mapboxgl, bbox: [105.7, -38.5, 130.5, -10.6] })); // WA bounding box
+map.addControl(new mapboxgl.GeolocateControl());
+map.addControl(new mapboxgl.ScaleControl());
 
 function load(data) {
     let layers = {};
@@ -39,8 +42,15 @@ function load(data) {
         },
         computed: {
             layers() {
-                let ws = this.workspace;
-                return Object.entries(this.alllayers).filter(layer => layer[0].search(ws) === 0)
+                let lyr = this.layer;
+                results = Object.entries(this.alllayers)
+                if (lyr.length > 0) {
+                    picked = results.filter(layer => layer[0] == lyr);
+                    if (picked.length == 1) { return picked; } else {
+                        results = results.filter(layer => JSON.stringify(layer).search(lyr) > -1);
+                    }
+                }
+                return results;
             },
             base_url() {
                 let base = `/geoserver/${this.workspace}/ows?service=WFS&version=2.0.0&request=GetFeature&SRSName=EPSG:4326&typeNames=${this.layer}`
@@ -49,6 +59,11 @@ function load(data) {
             }
         },
         methods: {
+            set(lyr) {
+                this.layer = lyr[0];
+                this.workspace = lyr[0].split(":")[0];
+                this.updatemap();
+            },
             url(format) {
                 return `${this.base_url}&outputFormat=${format}`
             },
@@ -68,7 +83,7 @@ function load(data) {
             setcqlbounds() {
                 if (this.cql.length > 0) { this.cql += " AND " }
                 bounds = map.getBounds();
-                this.cql = `${this.cql.split("BBOX")[0]}BBOX(the_geom,${bounds.getSouth()},${bounds.getWest()},${bounds.getNorth()},${bounds.getEast()})`
+                this.cql = `${this.cql.split("BBOX")[0]}BBOX(${this.json.features[0].geometry_name},${bounds.getSouth()},${bounds.getWest()},${bounds.getNorth()},${bounds.getEast()})`
                 this.updatemap();
             },
             updatemap() {
