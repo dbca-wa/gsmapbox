@@ -37,7 +37,7 @@
 					</small>
 				</td>
 				<td>
-					<small v-if="!json['features']"><pre style="overflow: auto; height: 10em;">{{ parse(json).trim() }}</pre></small>
+					<small v-if="!json['features']"><pre style="overflow: auto; height: 10em;">{{ xmlerror() }}</pre></small>
 					<small v-if="json['features']">
 						<ul style="list-style: none;">
 							<li><a v-bind:href="url('json')" download>GeoJSON</a>, <a v-bind:href="url('csv')"

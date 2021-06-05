@@ -52,10 +52,12 @@ function load(data) {
             url(format) {
                 return `${this.base_url}&outputFormat=${format}`
             },
-            parse(xmlerror) {
+            xmlerror() {
                 let parser = new DOMParser();
-                let serviceexception = parser.parseFromString(xmlerror, "text/xml").querySelector('ServiceException');
-                if (serviceexception) { return serviceexception.textContent };
+                let exceptiontext = parser.parseFromString(this.json, "text/xml").querySelector('ExceptionText');
+                if (exceptiontext) {
+                    return parser.parseFromString('<!doctype html><body>' + exceptiontext.textContent, 'text/html').body.textContent.trim();
+                };
                 return "";
             },
             updatemap() {
