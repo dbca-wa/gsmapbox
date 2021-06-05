@@ -9,24 +9,10 @@
 	<link rel="stylesheet" href="https://unpkg.com/sakura.css/css/sakura.css" type="text/css">
 	<script src="https://api.mapbox.com/mapbox-gl-js/v2.3.0/mapbox-gl.js"></script>
 	<script src="https://unpkg.com/vue@3.0.11/dist/vue.global.js"></script>
+	<script src="https://unpkg.com/turf@3.0.14/turf.js"></script>
 	<style>
-		body {
-			margin: 0;
-			padding: 0;
-		}
-
-		#controls {
-			position: absolute;
-			top: 0;
-			width: 100%;
-			height: 20vh;
-		}
-
 		#map {
-			position: absolute;
-			bottom: 0;
-			width: 100%;
-			height: 80vh;
+			height: 60vh;
 		}
 
 		[v-cloak] {
@@ -37,24 +23,38 @@
 
 <body>
 	<div v-cloak id="controls">
-		<h4>Geoserver WFS query utility</h4>
-		<b>Choose a layer: </b>
-		<select v-model="workspace">
-			<option v-for="ws in workspaces" v-bind:value="ws">{{ ws }}</option>
-		</select>
-		<select v-model="layer">
-			<option v-for="layer in layers" v-bind:value="layer[0]">{{ layer[1] }}</option>
-		</select>
-		<button v-on:click="updatemap">Preview</button> <small>Sample Features (max 1000): {{ features.length }}
-			<br><a href="https://docs.geoserver.org/latest/en/user/tutorials/cql/cql_tutorial.html" target="_blank">
-				ECQL (Extended Common Query Language - tutorial)</a><textarea v-model="cql"></textarea>
-			<span v-if="features.length> 0"><p>Download all:
-				<a v-bind:href="url('json')" download>GeoJSON</a>,
-				<a v-bind:href="url('csv')" download>CSV</a>,
-				<a v-bind:href="url('geopackage')" download>GeoPackage</a>, 
-				<a v-bind:href="url('KML')" download>KML</a>
-				<br>1st Feature Properties: {{ features[0]["properties"] }}</span>
-			</p>
+		<h6>Geoserver WFS query utility</h6>
+		<table>
+			<tr>
+				<td>
+					<small>Workspace <select v-model="workspace">
+							<option v-for="ws in workspaces" v-bind:value="ws">{{ ws }}</option>
+						</select><br>
+						Layer <select v-model="layer">
+							<option v-for="layer in layers" v-bind:value="layer[0]">{{ layer[1] }}</option>
+						</select><br>
+						<button v-on:click="updatemap">Load {{ layer }}</button>
+					</small>
+				</td>
+				<td>
+					<small v-if="!json['features']"><pre style="overflow: auto; height: 10em;">{{ parse(json).trim() }}</pre></small>
+					<small v-if="json['features']">
+						<ul style="list-style: none;">
+							<li><a v-bind:href="url('json')" download>GeoJSON</a>, <a v-bind:href="url('csv')"
+									download>CSV</a></li>
+							<li><a v-bind:href="url('geopackage')" download>GeoPackage</a>, <a v-bind:href="url('KML')"
+									download>KML</a></li>
+							<li><a v-bind:href="url('SHAPE-ZIP')" download>Shapefile (zip)</a></li>
+						</ul>
+					</small>
+				</td>
+			</tr>
+		</table>
+		<small v-if="json['features']">Preview Features: {{ json['features'].length }} (max 1000), 1st Feature Properties:<br>{{ json['features'][0]["properties"]
+			}}</small><small><br>
+			<a href="https://docs.geoserver.org/latest/en/user/tutorials/cql/cql_tutorial.html" target="_blank">
+				ECQL (Extended Common Query Language - tutorial)</a>
+			<textarea v-model="cql"></textarea>
 		</small>
 	</div>
 	<div id="map"></div>
