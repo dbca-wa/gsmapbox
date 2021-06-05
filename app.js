@@ -43,7 +43,7 @@ function load(data) {
                 return Object.entries(this.alllayers).filter(layer => layer[0].search(ws) === 0)
             },
             base_url() {
-                let base = `/geoserver/${this.workspace}/ows?service=WFS&version=2.0.0&request=GetFeature&SRSName=EPSG:4326&typeName=${this.layer}`
+                let base = `/geoserver/${this.workspace}/ows?service=WFS&version=2.0.0&request=GetFeature&SRSName=EPSG:4326&typeNames=${this.layer}`
                 if (this.cql.length > 0) { base = `${base}&cql_filter=${encodeURIComponent(this.cql)}` }
                 return base;
             }
@@ -88,7 +88,7 @@ function load(data) {
                     if (map.getLayer(type[0])) { map.removeLayer(type[0]); }
                 }
                 if (map.getSource(id)) { map.removeSource(id); }
-                map.addSource(id, { type: "geojson", data: `${this.url('json')}&maxFeatures=1000` });
+                map.addSource(id, { type: "geojson", data: `${this.url('json')}&count=1000` });
                 fetch(map.getSource("wfsdata")._data).then(response => response.clone().json().catch(() => response.text())).then(data => {
                     vuedata.json = data;
                     map.fitBounds(turf.bbox(data));
