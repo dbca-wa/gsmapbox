@@ -23,39 +23,40 @@
 
 <body>
 	<div v-cloak id="controls">
-		<h6>Geoserver WFS query utility</h6>
-		<table>
-			<tr>
-				<td>
-					<small>Workspace <select v-model="workspace">
-							<option v-for="ws in workspaces" v-bind:value="ws">{{ ws }}</option>
-						</select><br>
-						Layer <select v-model="layer">
-							<option v-for="layer in layers" v-bind:value="layer[0]">{{ layer[1] }}</option>
-						</select><br>
-						<button v-on:click="updatemap">Load {{ layer }}</button>
-					</small>
-				</td>
-				<td>
-					<small v-if="!json['features']"><pre style="overflow: auto; height: 10em;">{{ xmlerror() }}</pre></small>
-					<small v-if="json['features']">
-						<ul style="list-style: none;">
-							<li><a v-bind:href="url('json')" download>GeoJSON</a>, <a v-bind:href="url('csv')"
-									download>CSV</a></li>
-							<li><a v-bind:href="url('geopackage')" download>GeoPackage</a>, <a v-bind:href="url('KML')"
-									download>KML</a></li>
-							<li><a v-bind:href="url('SHAPE-ZIP')" download>Shapefile (zip)</a></li>
-						</ul>
-					</small>
-				</td>
-			</tr>
-		</table>
-		<small v-if="json['features']">Preview Features: {{ json['features'].length }} (max 1000), 1st Feature Properties:<br>{{ json['features'][0]["properties"]
-			}}</small><small><br>
-			<a href="https://docs.geoserver.org/latest/en/user/tutorials/cql/cql_tutorial.html" target="_blank">
-				ECQL (Extended Common Query Language - tutorial)</a>
-			<textarea v-model="cql"></textarea>
-		</small>
+		<div>
+			<strong>Geoserver WFS query utility - Workspace <select v-model="workspace" v-on:change="reset">
+					<option v-for="ws in workspaces" v-bind:value="ws">{{ ws }}</option>
+				</select></strong><br>
+			Layer: <input list="layers" v-model="layer" type="text" placeholder="Pick a layer..." />
+			<small v-if="json['features']"> Download:
+				<a v-bind:href="url('json')" download>GeoJSON</a>,
+				<a v-bind:href="url('csv')" download>CSV</a>,
+				<a v-bind:href="url('geopackage')" download>GeoPackage</a>,
+				<a v-bind:href="url('KML')" download>KML</a>,
+				<a v-bind:href="url('SHAPE-ZIP')" download>Shapefile (zip)</a>
+			</small><br>
+			<button v-on:click="updatemap">Load</button> |
+			<button v-on:click="reset">Clear</button> | 
+			<button v-on:click="setcqlbounds">Limit to map extent</button>
+			<datalist id="layers">
+				<option v-for="layer in layers" v-bind:value="layer[0]">{{ layer[1] }}</option>
+			</datalist>
+		</div>
+		<div v-if="!json['features'] && xmlerror().length > 0">
+			<small>
+				<pre style="overflow: auto; max-height: 20em;">{{ xmlerror() }}</pre>
+			</small>
+		</div>
+		<div v-if="json['features']">
+			<small>Preview Features: {{ json['features'].length }} (max 1000), 1st Feature Properties:<br>
+				{{ json['features'][0]["properties"] }}</small>
+		</div>
+		<div>
+			<small><a href="https://docs.geoserver.org/latest/en/user/tutorials/cql/cql_tutorial.html" target="_blank">
+					ECQL (Extended Common Query Language - tutorial)</a>
+				<textarea v-model="cql"></textarea>
+			</small>
+		</div>
 	</div>
 	<div id="map"></div>
 	<script src="app.js"></script>

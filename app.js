@@ -60,6 +60,17 @@ function load(data) {
                 };
                 return "";
             },
+            reset() {
+                this.layer = '';
+                this.cql = '';
+                this.json = '';
+            },
+            setcqlbounds() {
+                if (this.cql.length > 0) { this.cql += " AND " }
+                bounds = map.getBounds();
+                this.cql = `${this.cql.split("BBOX")[0]}BBOX(the_geom,${bounds.getSouth()},${bounds.getWest()},${bounds.getNorth()},${bounds.getEast()})`
+                this.updatemap();
+            },
             updatemap() {
                 document.location.hash = encodeURIComponent(JSON.stringify({
                     ws: this.workspace,
@@ -92,9 +103,13 @@ function load(data) {
                 if (map.getSource(id)) { map.removeSource(id); }
                 map.addSource(id, { type: "geojson", data: `${this.url('json')}&count=1000` });
                 fetch(map.getSource("wfsdata")._data).then(response => response.clone().json().catch(() => response.text())).then(data => {
-                    vuedata.json = data;
-                    map.fitBounds(turf.bbox(data));
-                }).catch();
+                    if (data.features && data.features.length > 0) {
+                        vuedata.json = data;
+                        map.fitBounds(turf.bbox(data));
+                    } else if (!data.features) {
+                        vuedata.json = data;
+                    }
+                });
                 for (let type of types) {
                     map.addLayer({
                         'id': type[0], 'type': type[1], 'source': id, 'filter': ['==', '$type', type[0]], 'paint': type[2]
