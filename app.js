@@ -11,36 +11,43 @@ map.addControl(new mapboxgl.GeolocateControl());
 map.addControl(new mapboxgl.ScaleControl());
 
 function load(data) {
-    let layers = {};
+    let alllayers = [];
     let parser = new DOMParser()
     parser.parseFromString(data, "text/xml").querySelectorAll("FeatureType").forEach(elem => {
-        let layerid = elem.querySelector("Name").textContent;
-        layers[layerid] = elem.querySelector("Title").textContent;
+        let name = elem.querySelector("Name").textContent
+        alllayers.push({
+            "title": elem.querySelector("Title").textContent,
+            "name": name,
+            "workspace": name.split(":")[0]
+        });
     })
-    window.wfslayers = layers;
     const Controls = {
         data() {
             return {
+                cql: "",
                 layer: "",
                 workspace: "",
-                alllayers: layers,
-                cql: "",
-                maplayerid: "wfsdata",
+                loading: false,
+                alllayers: alllayers,
                 json: {}
             }
         },
         computed: {
             layers() {
-                let lyr = this.layer;
-                results = Object.entries(this.alllayers)
-                if (lyr.length > 0) {
-                    picked = results.filter(layer => layer[0] == lyr);
-                    if (picked.length == 1) { return picked; } else {
+                let search = this.layer;
+                if (search.length > 0) {
+                    if (this.picked.length == 1) {
+                        return this.picked;
+                    } else {
                         // Treat input layer as case insensitive regex if not an exact match
-                        results = results.filter(layer => JSON.stringify(layer).match(new RegExp(lyr, "i")));
+                        return this.alllayers.filter(layer => `${layer.name} (${layer.title})`.match(new RegExp(search, "i")));
                     }
                 }
-                return results;
+                return this.alllayers;
+            },
+            picked() {
+                let search = this.layer;
+                return this.alllayers.filter(layer => layer.name == search);
             },
             base_url() {
                 let base = `/geoserver/${this.workspace}/ows?service=WFS&version=2.0.0&request=GetFeature&SRSName=EPSG:4326&typeNames=${this.layer}`
@@ -50,8 +57,8 @@ function load(data) {
         },
         methods: {
             set(lyr) {
-                this.layer = lyr[0];
-                this.workspace = lyr[0].split(":")[0];
+                this.layer = lyr.name;
+                this.workspace = lyr.workspace;
                 this.updatemap();
             },
             url(format) {
@@ -69,6 +76,7 @@ function load(data) {
                 this.layer = '';
                 this.cql = '';
                 this.json = '';
+                this.loading = false;
             },
             setcqlbounds() {
                 if (this.cql.length > 0) { this.cql += " AND " }
@@ -76,50 +84,62 @@ function load(data) {
                 this.cql = `${this.cql.split("BBOX")[0]}BBOX(${this.json.features[0].geometry_name},${bounds.getSouth()},${bounds.getWest()},${bounds.getNorth()},${bounds.getEast()})`
                 this.updatemap();
             },
+            addLayers(srcid) { // add display layers with source id
+                map.addLayer({
+                    "id": "Polygon", "type": "fill", "source": id,
+                    "filter": ['==', '$type', "Polygon"],
+                    "paint": {
+                        'fill-color': 'blue',
+                        'fill-opacity': 0.4
+                    }
+                });
+                map.addLayer({
+                    "id": "LineString", "type": "line", "source": id,
+                    "filter": ['any', ['==', '$type', "LineString"], ['==', '$type', "Polygon"]],
+                    "paint": {
+                        'line-color': 'blue',
+                        'line-opacity': 0.7,
+                        'line-width': 3
+                    }
+                });
+                map.addLayer({
+                    "id": "Point", "type": "circle", "source": id,
+                    "filter": ['==', '$type', "Point"],
+                    "paint": {
+                        'circle-radius': 6,
+                        'circle-stroke-width': 2,
+                        'circle-color': 'red',
+                        'circle-stroke-color': 'white',
+                        'circle-opacity': 0.8
+                    }
+                });
+            },
             updatemap() {
+                this.loading = `Loading ${this.layer} ...`;
                 document.location.hash = encodeURIComponent(JSON.stringify({
                     ws: this.workspace,
                     lyr: this.layer,
                     cql: this.cql
                 }));
                 let vuedata = this;
-                let id = this.maplayerid
-                let types = [
-                    ["Polygon", "fill", {
-                        'fill-color': 'blue',
-                        'fill-opacity': 0.4
-                    }],
-                    ["LineString", "line", {
-                        'line-color': 'blue',
-                        'line-opacity': 0.7,
-                        'line-width': 3
-                    }],
-                    ["Point", "circle", {
-                        'circle-radius': 8,
-                        'circle-stroke-width': 2,
-                        'circle-color': 'red',
-                        'circle-stroke-color': 'white',
-                        'circle-opacity': 0.8
-                    }]
-                ]
-                for (let type of types) {
-                    if (map.getLayer(type[0])) { map.removeLayer(type[0]); }
+                let id = "wfsdata"
+                for (let type of ["Polygon", "LineString", "Point"]) {
+                    if (map.getLayer(type)) { map.removeLayer(type); }
                 }
                 if (map.getSource(id)) { map.removeSource(id); }
-                map.addSource(id, { type: "geojson", data: `${this.url('json')}&count=1000` });
-                fetch(map.getSource("wfsdata")._data).then(response => response.clone().json().catch(() => response.text())).then(data => {
+                fetch(`${this.url('json')}&count=1000`).then(response => response.clone().json().catch(() => response.text())).then(data => {
                     if (data.features && data.features.length > 0) {
                         vuedata.json = data;
+                        map.addSource(id, { type: "geojson", data: data });
+                        vuedata.addLayers(id);
                         map.fitBounds(turf.bbox(data));
+                        vuedata.loading = false;
                     } else if (!data.features) {
                         vuedata.json = data;
+                        vuedata.loading = false;
                     }
                 });
-                for (let type of types) {
-                    map.addLayer({
-                        'id': type[0], 'type': type[1], 'source': id, 'filter': ['==', '$type', type[0]], 'paint': type[2]
-                    })
-                }
+
             }
         }
     }
