@@ -47,7 +47,8 @@ function load(data) {
                 if (lyr.length > 0) {
                     picked = results.filter(layer => layer[0] == lyr);
                     if (picked.length == 1) { return picked; } else {
-                        results = results.filter(layer => JSON.stringify(layer).search(lyr) > -1);
+                        // Treat input layer as case insensitive regex if not an exact match
+                        results = results.filter(layer => JSON.stringify(layer).match(new RegExp(lyr, "i")));
                     }
                 }
                 return results;
