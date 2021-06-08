@@ -1,5 +1,5 @@
 # gsmapbox
-Mapbox client meant to browse/download content from geoserver rest api
+Mapbox client meant to browse/download content from geoserver WFS endpoints
 
 ## Usage
 Download as a zip and extract to `$GEOSERVER_DATA_DIR/www/gsmapbox` or similar location, then access by browsing to https://mygeoserverurl/geoserver/www/gsmapbox/index.html and use to query/preview/download WFS resources.
