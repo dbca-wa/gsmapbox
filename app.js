@@ -86,7 +86,7 @@ function load(data) {
             },
             addLayers(srcid) { // add display layers with source id
                 map.addLayer({
-                    "id": "Polygon", "type": "fill", "source": id,
+                    "id": "Polygon", "type": "fill", "source": srcid,
                     "filter": ['==', '$type', "Polygon"],
                     "paint": {
                         'fill-color': 'blue',
@@ -94,7 +94,7 @@ function load(data) {
                     }
                 });
                 map.addLayer({
-                    "id": "LineString", "type": "line", "source": id,
+                    "id": "LineString", "type": "line", "source": srcid,
                     "filter": ['any', ['==', '$type', "LineString"], ['==', '$type', "Polygon"]],
                     "paint": {
                         'line-color': 'blue',
@@ -103,7 +103,7 @@ function load(data) {
                     }
                 });
                 map.addLayer({
-                    "id": "Point", "type": "circle", "source": id,
+                    "id": "Point", "type": "circle", "source": srcid,
                     "filter": ['==', '$type', "Point"],
                     "paint": {
                         'circle-radius': 6,
