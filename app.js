@@ -12,30 +12,19 @@ map.addControl(new mapboxgl.ScaleControl());
 
 function load(data) {
     let layers = {};
-    let defaultLayer = false;
-    let defaultWorkspace = false;
-    let defaultCQL = "";
-    let workspaces = new Set();
     let parser = new DOMParser()
     parser.parseFromString(data, "text/xml").querySelectorAll("FeatureType").forEach(elem => {
         let layerid = elem.querySelector("Name").textContent;
-        let ws = layerid.split(":")[0];
-        workspaces.add(ws);
         layers[layerid] = elem.querySelector("Title").textContent;
-        if (defaultLayer === false) {
-            defaultLayer = layerid;
-            defaultWorkspace = ws;
-        }
     })
     window.wfslayers = layers;
     const Controls = {
         data() {
             return {
-                layer: defaultLayer,
-                workspace: defaultWorkspace,
-                workspaces: workspaces,
+                layer: "",
+                workspace: "",
                 alllayers: layers,
-                cql: defaultCQL,
+                cql: "",
                 maplayerid: "wfsdata",
                 json: {}
             }
